@@ -10,6 +10,7 @@ import (
 type CategoryRepository interface {
 	Create(category *models.Category) error
 	GetBySlug(slug string) (*models.Category, error)
+	GetSlugLike(slug string) ([]models.Category, error)
 	List() ([]models.Category, error)
 }
 
@@ -33,6 +34,14 @@ func (r *categoryRepository) GetBySlug(slug string) (*models.Category, error) {
 		return nil, err
 	}
 	return &cat, nil
+}
+
+func (r *categoryRepository) GetSlugLike(slug string) ([]models.Category, error) {
+	var categories []models.Category
+	if err := r.db.Where("slug LIKE ?", slug+"%").Find(&categories).Error; err != nil {
+		return nil, err
+	}
+	return categories, nil
 }
 
 func (r *categoryRepository) List() ([]models.Category, error) {

@@ -8,7 +8,7 @@ import (
 
 type Buyer struct {
 	ID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
-	Nama      string    `gorm:"size:255" json:"nama"`
+	Name      string    `gorm:"size:255" json:"name"`
 	Email     string    `gorm:"size:255" json:"email"`
 	Phone     string    `gorm:"size:20" json:"phone"`
 	ClassID   string    `gorm:"type:char(36)" json:"class_id"`

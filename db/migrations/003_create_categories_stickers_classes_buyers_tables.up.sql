@@ -49,7 +49,7 @@ CREATE INDEX IF NOT EXISTS idx_classes_name_min_order ON classes(name, min_order
 -- Create Buyers Table
 CREATE TABLE IF NOT EXISTS buyers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    nama VARCHAR(255),
+    name VARCHAR(255),
     email VARCHAR(255),
     phone VARCHAR(20),
     class_id CHAR(36),

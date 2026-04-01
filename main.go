@@ -17,8 +17,8 @@ import (
 func main() {
 	config.ConnectDB()
 
-	// Auto migrate category table (and related models if desired)
-	if err := config.DB.AutoMigrate(&models.Category{}); err != nil {
+	// Auto migrate models
+	if err := config.DB.AutoMigrate(&models.Category{}, &models.Sticker{}); err != nil {
 		log.Fatal("auto migrate failed:", err)
 	}
 

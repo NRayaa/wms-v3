@@ -12,9 +12,9 @@ type Sticker struct {
 	Name       string    `gorm:"size:255;not null" json:"name"`
 	Slug       string    `gorm:"size:255;unique;not null" json:"slug"`
 	Type       string    `gorm:"size:50" json:"type"`
-	FixedPrice int       `json:"fixed_price"`
-	MinPrice   float64   `gorm:"type:decimal(15,2)" json:"min_price"`
-	MaxPrice   float64   `gorm:"type:decimal(15,2)" json:"max_price"`
+	FixedPrice *int      `json:"fixed_price"`
+	MinPrice   *Price    `gorm:"type:decimal(15,2)" json:"min_price"`
+	MaxPrice   *Price    `gorm:"type:decimal(15,2)" json:"max_price"`
 	CreatedAt  time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt  time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 }

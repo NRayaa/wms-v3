@@ -14,18 +14,49 @@ import (
 func SetupRoutes(r *gin.Engine) {
 	// Repositories
 	categoryRepo := repositories.NewCategoryRepository(config.DB)
+	stickerRepo := repositories.NewStickerRepository(config.DB)
+	buyerRepo := repositories.NewBuyerRepository(config.DB)
+	classRepo := repositories.NewClassRepository(config.DB)
 
 	// Services
 	categoryService := services.NewCategoryService(categoryRepo)
+	stickerService := services.NewStickerService(stickerRepo)
+	buyerService := services.NewBuyerService(buyerRepo, classRepo)
+	classService := services.NewClassService(classRepo)
 
 	// Controllers
 	categoryController := controller.NewCategoryController(categoryService)
+	stickerController := controller.NewStickerController(stickerService)
+	buyerController := controller.NewBuyerController(buyerService)
+	classController := controller.NewClassController(classService)
 
 	// Public API
 	api := r.Group("/api")
 	{
+		// Categories
 		api.POST("/categories", categoryController.CreateCategory)
 		api.GET("/categories", categoryController.ListCategories)
+
+		// Stickers
+		api.POST("/stickers", stickerController.CreateSticker)
+		api.GET("/stickers", stickerController.ListStickers)
+		api.GET("/stickers/:id", stickerController.GetStickerByID)
+		api.PUT("/stickers/:id", stickerController.UpdateSticker)
+		api.DELETE("/stickers/:id", stickerController.DeleteSticker)
+
+		// Buyers
+		api.POST("/buyers", buyerController.CreateBuyer)
+		api.GET("/buyers", buyerController.ListBuyers)
+		api.GET("/buyers/:id", buyerController.GetBuyerByID)
+		api.PUT("/buyers/:id", buyerController.UpdateBuyer)
+		api.DELETE("/buyers/:id", buyerController.DeleteBuyer)
+
+		// Classes
+		api.POST("/classes", classController.CreateClass)
+		api.GET("/classes", classController.ListClasses)
+		api.GET("/classes/:id", classController.GetClassByID)
+		api.PUT("/classes/:id", classController.UpdateClass)
+		api.DELETE("/classes/:id", classController.DeleteClass)
 	}
 
 	// contoh group lain (auth / protected) disiapkan untuk scale

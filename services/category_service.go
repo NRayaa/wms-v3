@@ -3,6 +3,8 @@ package services
 import (
 	"errors"
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 	"wms/models"
 	"wms/repositories"
@@ -18,11 +20,11 @@ type CategoryService interface {
 
 // CreateCategoryPayload request payload.
 type CreateCategoryPayload struct {
-	Name     string  `json:"name" binding:"required"`
-	Slug     string  `json:"slug" binding:"required"`
-	Discount int     `json:"discount"`
-	MinPrice float64 `json:"min_price"`
-	MaxPrice float64 `json:"max_price"`
+	Name     string   `json:"name" binding:"required"`
+	Slug     string   `json:"slug"`
+	Discount *int     `json:"discount"`
+	MinPrice *float64 `json:"min_price"`
+	MaxPrice *float64 `json:"max_price"`
 }
 
 type categoryService struct {
@@ -34,37 +36,110 @@ func NewCategoryService(repo repositories.CategoryRepository) CategoryService {
 	return &categoryService{repo: repo}
 }
 
+// generateSlugFromName converts name to slug format (lowercase with dashes)
+func (s *categoryService) generateSlugFromName(name string) string {
+	slug := strings.ToLower(strings.TrimSpace(name))
+	slug = regexp.MustCompile(`[^a-z0-9]+`).ReplaceAllString(slug, "-")
+	slug = strings.Trim(slug, "-")
+	return slug
+}
+
+// generateUniqueSlug generates a unique slug by checking existing ones
+func (s *categoryService) generateUniqueSlug(baseSlug string) (string, error) {
+	// Check if base slug exists
+	_, err := s.repo.GetBySlug(baseSlug)
+	if err != nil {
+		// Slug doesn't exist, return it
+		return baseSlug, nil
+	}
+
+	// Get all similar slugs
+	similarSlugs, err := s.repo.GetSlugLike(baseSlug)
+	if err != nil {
+		return "", err
+	}
+
+	// Extract numbers from similar slugs and find the highest number
+	maxNum := 0
+	for _, cat := range similarSlugs {
+		if cat.Slug == baseSlug {
+			maxNum = 0
+			continue
+		}
+		// Try to extract number from slug like "otomotif1", "otomotif2"
+		parts := strings.Split(cat.Slug, baseSlug)
+		if len(parts) > 1 && parts[1] != "" {
+			if num, err := strconv.Atoi(parts[1]); err == nil && num > maxNum {
+				maxNum = num
+			}
+		}
+	}
+
+	// Generate new slug with incremented number
+	newSlug := fmt.Sprintf("%s%d", baseSlug, maxNum+1)
+	return newSlug, nil
+}
+
 func (s *categoryService) CreateCategory(input CreateCategoryPayload) (*models.Category, error) {
 	if strings.TrimSpace(input.Name) == "" {
 		return nil, errors.New("name is required")
 	}
-	if strings.TrimSpace(input.Slug) == "" {
-		return nil, errors.New("slug is required")
-	}
-	if input.Discount < 0 || input.Discount > 100 {
+	if input.Discount != nil && (*input.Discount < 0 || *input.Discount > 100) {
 		return nil, errors.New("discount must be between 0 and 100")
 	}
-	if input.MinPrice < 0 || input.MaxPrice < 0 {
+	if input.MinPrice != nil && *input.MinPrice < 0 {
 		return nil, errors.New("price values must be non-negative")
 	}
-	if input.MaxPrice > 0 && input.MinPrice > input.MaxPrice {
+	if input.MaxPrice != nil && *input.MaxPrice < 0 {
+		return nil, errors.New("price values must be non-negative")
+	}
+	if input.MaxPrice != nil && input.MinPrice != nil && *input.MaxPrice > 0 && *input.MinPrice > *input.MaxPrice {
 		return nil, errors.New("min_price cannot be greater than max_price")
 	}
 
-	slug := strings.ToLower(strings.TrimSpace(input.Slug))
-	slug = strings.ReplaceAll(slug, " ", "-")
+	// Generate slug from name
+	var slug string
+	if strings.TrimSpace(input.Slug) != "" {
+		// If slug provided, use it and make it unique if needed
+		slug = s.generateSlugFromName(input.Slug)
+	} else {
+		// Generate slug from name
+		slug = s.generateSlugFromName(input.Name)
+	}
 
-	if _, err := s.repo.GetBySlug(slug); err == nil {
-		return nil, fmt.Errorf("category slug '%s' already exists", slug)
+	// Make slug unique if duplicate
+	uniqueSlug, err := s.generateUniqueSlug(slug)
+	if err != nil {
+		return nil, err
+	}
+
+	// Set default values if not provided
+	discount := input.Discount
+	if discount == nil {
+		defaultDiscount := 0
+		discount = &defaultDiscount
+	}
+
+	// Convert float64 prices to Price type
+	var minPrice *models.Price
+	if input.MinPrice != nil {
+		p := models.Price(*input.MinPrice)
+		minPrice = &p
+	}
+
+	var maxPrice *models.Price
+	if input.MaxPrice != nil {
+		p := models.Price(*input.MaxPrice)
+		maxPrice = &p
 	}
 
 	category := &models.Category{
 		ID:       uuid.New(),
 		Name:     strings.TrimSpace(input.Name),
-		Slug:     slug,
-		Discount: input.Discount,
-		MinPrice: input.MinPrice,
-		MaxPrice: input.MaxPrice,
+		Slug:     uniqueSlug,
+		Discount: discount,
+		MinPrice: minPrice,
+		MaxPrice: maxPrice,
 		Status:   "active",
 	}
 
