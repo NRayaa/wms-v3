@@ -30,6 +30,7 @@ type ProductMaster struct {
 	RackDisplayID    string         `gorm:"type:char(36)" json:"rack_display_id"`
 	BagID            string         `gorm:"type:char(36)" json:"bag_id"`
 	UserID           string         `gorm:"type:char(36)" json:"user_id"`
-	Timestamp        time.Time      `gorm:"autoCreateTime" json:"timestamp"`
+	CreatedAt        time.Time      `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt        time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
 	DeletedAt        gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }

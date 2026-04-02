@@ -32,12 +32,31 @@ func generateUniqueBarcode() string {
 func ListAllProductMastersHandler(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var masters []models.ProductMaster
-		if err := db.Order("timestamp DESC").Find(&masters).Error; err != nil {
+		if err := db.Order("created_at DESC").Find(&masters).Error; err != nil {
 			utils.SendError(c, 500, err.Error())
 			return
 		}
 		utils.SendSuccess(c, masters, "List master data", http.StatusOK)
 	}
+}
+
+// getOrCreateManualDocument mencari atau membuat dokumen khusus inbound manual
+func getOrCreateManualDocument(db *gorm.DB) (models.ProductDocument, error) {
+	var doc models.ProductDocument
+	err := db.Where("code = ?", "INBOUND_MANUAL").First(&doc).Error
+	if err == gorm.ErrRecordNotFound {
+		doc = models.ProductDocument{
+			Code:     "INBOUND_MANUAL",
+			FileName: "INBOUND_MANUAL",
+			Type:     "manual",
+			Status:   "progress",
+		}
+		if err := db.Create(&doc).Error; err != nil {
+			return doc, err
+		}
+		return doc, nil
+	}
+	return doc, err
 }
 
 func InboundManualHandler(db *gorm.DB) gin.HandlerFunc {
@@ -62,8 +81,14 @@ func InboundManualHandler(db *gorm.DB) gin.HandlerFunc {
 		barcode := generateUniqueBarcode()
 		barcodeWarehouse := generateUniqueBarcode()
 
-		// Logic BE: tentukan category_id/sticker_id otomatis
+		// Logic dokumen: cari/buat dokumen manual
+		doc, err := getOrCreateManualDocument(db)
+		if err != nil {
+			utils.SendError(c, 500, "Gagal membuat dokumen manual: "+err.Error())
+			return
+		}
 
+		// Logic BE: tentukan category_id/sticker_id otomatis
 		var categoryID, stickerID, typeID string
 		if req.Price >= 100000 {
 			if req.CategoryID != nil {
@@ -80,6 +105,7 @@ func InboundManualHandler(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		master := models.ProductMaster{
+			DocumentID:       doc.ID.String(),
 			Barcode:          barcode,
 			BarcodeWarehouse: barcodeWarehouse,
 			Name:             req.Name,
@@ -94,11 +120,12 @@ func InboundManualHandler(db *gorm.DB) gin.HandlerFunc {
 
 		// Insert ke ProductPending
 		pending := models.ProductPending{
-			Barcode: barcode,
-			Name:    req.Name,
-			Item:    req.Item,
-			Price:   req.Price,
-			Status:  "non", // default status valid
+			DocumentID: doc.ID.String(),
+			Barcode:    barcode,
+			Name:       req.Name,
+			Item:       req.Item,
+			Price:      req.Price,
+			Status:     "non", // default status valid
 		}
 		if err := db.Create(&pending).Error; err != nil {
 			utils.SendError(c, 500, err.Error())
