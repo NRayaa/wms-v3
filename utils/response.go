@@ -12,7 +12,7 @@ type APIResponse struct {
 	Success bool        `json:"success"`
 	Message string      `json:"message"`
 	Data    interface{} `json:"data,omitempty"`
-	Meta    interface{} `json:"meta,omitempty"`
+	Meta    interface{} `json:"meta"`
 }
 
 // ErrorItem for validation errors.
@@ -36,6 +36,7 @@ func SendSuccess(c *gin.Context, data interface{}, message string, statusCode ..
 		Success: true,
 		Message: message,
 		Data:    data,
+		Meta:    nil,
 	})
 }
 

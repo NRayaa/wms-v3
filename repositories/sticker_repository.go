@@ -6,6 +6,11 @@ import (
 	"gorm.io/gorm"
 )
 
+// stickerRepository is GORM implementation.
+type stickerRepository struct {
+	db *gorm.DB
+}
+
 // StickerRepository defines interface for sticker CRUD.
 type StickerRepository interface {
 	Create(sticker *models.Sticker) error
@@ -15,11 +20,6 @@ type StickerRepository interface {
 	List() ([]models.Sticker, error)
 	Update(sticker *models.Sticker) error
 	Delete(id string) error
-}
-
-// stickerRepository is GORM implementation.
-type stickerRepository struct {
-	db *gorm.DB
 }
 
 // NewStickerRepository constructor.
@@ -33,7 +33,7 @@ func (r *stickerRepository) Create(sticker *models.Sticker) error {
 
 func (r *stickerRepository) GetBySlug(slug string) (*models.Sticker, error) {
 	var sticker models.Sticker
-	if err := r.db.Where("slug = ?", slug).First(&sticker).Error; err != nil {
+	if err := r.db.Where("slug = ? AND deleted_at IS NULL", slug).First(&sticker).Error; err != nil {
 		return nil, err
 	}
 	return &sticker, nil
@@ -41,7 +41,7 @@ func (r *stickerRepository) GetBySlug(slug string) (*models.Sticker, error) {
 
 func (r *stickerRepository) GetSlugLike(slug string) ([]models.Sticker, error) {
 	var stickers []models.Sticker
-	if err := r.db.Where("slug LIKE ?", slug+"%").Find(&stickers).Error; err != nil {
+	if err := r.db.Where("slug LIKE ? AND deleted_at IS NULL", slug+"%").Find(&stickers).Error; err != nil {
 		return nil, err
 	}
 	return stickers, nil

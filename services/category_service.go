@@ -16,6 +16,66 @@ import (
 type CategoryService interface {
 	CreateCategory(input CreateCategoryPayload) (*models.Category, error)
 	ListCategories() ([]models.Category, error)
+	GetCategoryByID(id string) (*models.Category, error)
+	UpdateCategory(id string, input UpdateCategoryPayload) (*models.Category, error)
+	DeleteCategory(id string) error
+}
+
+// UpdateCategoryPayload request payload for update.
+type UpdateCategoryPayload struct {
+	Name     string   `json:"name"`
+	Slug     string   `json:"slug"`
+	Discount *int     `json:"discount"`
+	MinPrice *float64 `json:"min_price"`
+	MaxPrice *float64 `json:"max_price"`
+	Status   string   `json:"status"`
+}
+
+// DeleteCategory deletes a category by its ID.
+func (s *categoryService) DeleteCategory(id string) error {
+	return s.repo.Delete(id)
+}
+
+// UpdateCategory updates a category by its ID.
+func (s *categoryService) UpdateCategory(id string, input UpdateCategoryPayload) (*models.Category, error) {
+	category, err := s.repo.GetByID(id)
+	if err != nil {
+		return nil, err
+	}
+	if input.Name != "" {
+		category.Name = input.Name
+	}
+	if input.Slug != "" {
+		slug := s.generateSlugFromName(input.Slug)
+		uniqueSlug, err := s.generateUniqueSlug(slug)
+		if err != nil {
+			return nil, err
+		}
+		category.Slug = uniqueSlug
+	}
+	if input.Discount != nil {
+		category.Discount = input.Discount
+	}
+	if input.MinPrice != nil {
+		p := models.Price(*input.MinPrice)
+		category.MinPrice = &p
+	}
+	if input.MaxPrice != nil {
+		p := models.Price(*input.MaxPrice)
+		category.MaxPrice = &p
+	}
+	if input.Status != "" {
+		category.Status = input.Status
+	}
+	if err := s.repo.Update(category); err != nil {
+		return nil, err
+	}
+	return category, nil
+}
+
+// GetCategoryByID returns a category by its ID.
+func (s *categoryService) GetCategoryByID(id string) (*models.Category, error) {
+	return s.repo.GetByID(id)
 }
 
 // CreateCategoryPayload request payload.

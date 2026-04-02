@@ -18,17 +18,42 @@ func NewCategoryController(service services.CategoryService) *CategoryController
 	return &CategoryController{service: service}
 }
 
+// UpdateCategory endpoint.
+func (ctrl *CategoryController) UpdateCategory(c *gin.Context) {
+	id := c.Param("id")
+	var payload services.UpdateCategoryPayload
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		validationErrors := []utils.ErrorItem{{Field: "", Message: err.Error()}}
+		utils.SendValidationError(c, validationErrors)
+		return
+	}
+
+	category, err := ctrl.service.UpdateCategory(id, payload)
+	if err != nil {
+		utils.SendError(c, 400, err.Error())
+		return
+	}
+
+	utils.SendSuccess(c, category, "Category berhasil diupdate", http.StatusOK)
+}
+
+// DeleteCategory endpoint.
+func (ctrl *CategoryController) DeleteCategory(c *gin.Context) {
+	id := c.Param("id")
+	err := ctrl.service.DeleteCategory(id)
+	if err != nil {
+		utils.SendError(c, 400, err.Error())
+		return
+	}
+
+	utils.SendSuccess(c, nil, "Category berhasil dihapus", http.StatusOK)
+}
+
 // CreateCategory endpoint.
 func (ctrl *CategoryController) CreateCategory(c *gin.Context) {
 	var payload services.CreateCategoryPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		validationErrors := []utils.ErrorItem{{Field: "", Message: err.Error()}}
-		// if errs, ok := err.(gin.Errors); ok {
-		// 	validationErrors = make([]utils.ErrorItem, 0, len(errs))
-		// 	for _, e := range errs {
-		// 		validationErrors = append(validationErrors, utils.ErrorItem{Field: e.Field(), Message: e.Error()})
-		// 	}
-		// }
 		utils.SendValidationError(c, validationErrors)
 		return
 	}
@@ -50,4 +75,15 @@ func (ctrl *CategoryController) ListCategories(c *gin.Context) {
 		return
 	}
 	utils.SendSuccess(c, categories, "list categories")
+}
+
+// GetCategoryByID endpoint.
+func (ctrl *CategoryController) GetCategoryByID(c *gin.Context) {
+	id := c.Param("id")
+	category, err := ctrl.service.GetCategoryByID(id)
+	if err != nil {
+		utils.SendError(c, 404, "Category tidak ditemukan")
+		return
+	}
+	utils.SendSuccess(c, category, "Category ditemukan", http.StatusOK)
 }

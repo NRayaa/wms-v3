@@ -36,6 +36,9 @@ func SetupRoutes(r *gin.Engine) {
 		// Categories
 		api.POST("/categories", categoryController.CreateCategory)
 		api.GET("/categories", categoryController.ListCategories)
+		api.GET("/categories/:id", categoryController.GetCategoryByID)
+		api.PUT("/categories/:id", categoryController.UpdateCategory)
+		api.DELETE("/categories/:id", categoryController.DeleteCategory)
 
 		// Stickers
 		api.POST("/stickers", stickerController.CreateSticker)
