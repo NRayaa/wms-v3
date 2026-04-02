@@ -14,7 +14,9 @@ CREATE TABLE IF NOT EXISTS orders (
     total_box INT,
     price_box DECIMAL(15,2),
     grand_total DECIMAL(15,2),
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_code ON orders(code);
@@ -28,7 +30,10 @@ CREATE TABLE IF NOT EXISTS product_orders (
     name VARCHAR(255),
     price DECIMAL(15,2),
     price_warehouse DECIMAL(15,2),
-    discount DECIMAL(15,2)
+    discount DECIMAL(15,2),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_product_orders_order_product ON product_orders(order_id, product_id);
@@ -40,7 +45,10 @@ CREATE TABLE IF NOT EXISTS cargo_orders (
     cargo_id CHAR(36),
     name VARCHAR(255),
     price DECIMAL(15,2),
-    price_warehouse DECIMAL(15,2)
+    price_warehouse DECIMAL(15,2),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_cargo_orders_order_cargo ON cargo_orders(order_id, cargo_id);
@@ -52,7 +60,10 @@ CREATE TABLE IF NOT EXISTS bag_orders (
     cargo_id CHAR(36),
     name VARCHAR(255),
     price DECIMAL(15,2),
-    price_warehouse DECIMAL(15,2)
+    price_warehouse DECIMAL(15,2),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_bag_orders_order_cargo ON bag_orders(order_id, cargo_id);
@@ -65,7 +76,10 @@ CREATE TABLE IF NOT EXISTS discount_orders (
     name VARCHAR(255),
     is_nominal BOOLEAN DEFAULT true,
     value_nominal DECIMAL(15,2),
-    value_percentage INT
+    value_percentage INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_discount_orders_order_id ON discount_orders(order_id);

@@ -4,7 +4,10 @@ CREATE TABLE IF NOT EXISTS transfer_stores (
     code VARCHAR(255) NOT NULL,
     user_id CHAR(36),
     status VARCHAR(50) CHECK (status IN ('progress', 'done', 'cancel')),
-    store_id CHAR(36)
+    store_id CHAR(36),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_transfer_stores_code ON transfer_stores(code);
@@ -17,7 +20,10 @@ CREATE TABLE IF NOT EXISTS stores (
     slug VARCHAR(255) NOT NULL,
     phone VARCHAR(20),
     address TEXT,
-    is_active BOOLEAN DEFAULT true
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_stores_slug_phone ON stores(slug, phone);
@@ -29,7 +35,10 @@ CREATE TABLE IF NOT EXISTS stock_stores (
     store_id CHAR(36),
     transfer_store_id CHAR(36),
     status VARCHAR(50) CHECK (status IN ('stock', 'sale', 'out', 'discrepancy')),
-    date_out TIMESTAMP
+    date_out TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_stock_stores_product_store ON stock_stores(product_id, store_id);

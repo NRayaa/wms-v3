@@ -13,7 +13,9 @@ CREATE TABLE IF NOT EXISTS product_documents (
     header_item VARCHAR(255),
     header_price VARCHAR(255),
     user_id CHAR(36),
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_product_documents_code ON product_documents(code);
@@ -29,7 +31,9 @@ CREATE TABLE IF NOT EXISTS product_pendings (
     is_sku BOOLEAN DEFAULT false,
     status VARCHAR(50) CHECK (status IN ('discrepancy', 'good', 'damaged', 'abnormal', 'non')),
     note TEXT,
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_product_pendings_document_id ON product_pendings(document_id);
@@ -39,7 +43,9 @@ CREATE TABLE IF NOT EXISTS rack_displays (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     code VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_rack_displays_code ON rack_displays(code);
@@ -50,7 +56,9 @@ CREATE TABLE IF NOT EXISTS rack_stagings (
     rack_display_id CHAR(36),
     code VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
     is_moved BOOLEAN DEFAULT false
 );
 
@@ -80,7 +88,9 @@ CREATE TABLE IF NOT EXISTS product_masters (
     rack_display_id CHAR(36),
     bag_id CHAR(36),
     user_id CHAR(36),
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_product_masters_barcode ON product_masters(barcode);

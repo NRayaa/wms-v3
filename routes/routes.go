@@ -60,6 +60,10 @@ func SetupRoutes(r *gin.Engine) {
 		api.GET("/classes/:id", classController.GetClassByID)
 		api.PUT("/classes/:id", classController.UpdateClass)
 		api.DELETE("/classes/:id", classController.DeleteClass)
+
+		// Inbound Manual
+		api.POST("/scanin/manual", controller.InboundManualHandler(config.DB))
+		api.GET("/scanin/manual", controller.ListAllProductMastersHandler(config.DB))
 	}
 
 	// contoh group lain (auth / protected) disiapkan untuk scale

@@ -6,7 +6,9 @@ CREATE TABLE IF NOT EXISTS user_class_logs (
     new_class_id CHAR(36),
     order_id CHAR(36),
     change_type VARCHAR(255),
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_user_class_logs_prev_new_order_buyer ON user_class_logs(prev_class_id, new_class_id, order_id, buyer_id);
@@ -21,7 +23,9 @@ CREATE TABLE IF NOT EXISTS movement_products (
     from_location VARCHAR(255),
     to_location VARCHAR(255),
     qty INT,
-    datetime TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_movement_products_product_id ON movement_products(product_id);

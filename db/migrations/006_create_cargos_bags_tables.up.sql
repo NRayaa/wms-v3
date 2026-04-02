@@ -10,7 +10,10 @@ CREATE TABLE IF NOT EXISTS product_repairs (
     category_id CHAR(36),
     sticker_id CHAR(36),
     remark_origin TEXT,
-    remark_after TEXT
+    remark_after TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_product_repairs_lookup ON product_repairs(product_id, user_id, category_id, sticker_id);
@@ -22,7 +25,10 @@ CREATE TABLE IF NOT EXISTS cargos (
     status VARCHAR(50) CHECK (status IN ('open', 'lock', 'cancel')),
     is_sale BOOLEAN DEFAULT false,
     is_online BOOLEAN DEFAULT false,
-    user_id CHAR(36)
+    user_id CHAR(36),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_cargos_code ON cargos(code);
@@ -36,9 +42,11 @@ CREATE TABLE IF NOT EXISTS bags (
     user_id CHAR(36),
     lock_status VARCHAR(50) CHECK (lock_status IN ('open', 'lock', 'out')),
     date_out DATE,
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     cargo_id CHAR(36),
-    transfer_store_id CHAR(36)
+    transfer_store_id CHAR(36),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_bags_code ON bags(code);
@@ -48,7 +56,10 @@ CREATE INDEX IF NOT EXISTS idx_bags_user_id ON bags(user_id);
 CREATE TABLE IF NOT EXISTS item_bags (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     product_id CHAR(36),
-    bag_id CHAR(36)
+    bag_id CHAR(36),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_item_bags_product_bag ON item_bags(product_id, bag_id);
