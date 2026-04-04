@@ -24,3 +24,13 @@ func (ctl *ProductMasterController) ListStagingReguler(c *gin.Context) {
 	}
 	utils.SendSuccess(c, masters, "List product master staging_reguler", http.StatusOK)
 }
+
+// ListStagingSticker hanya menampilkan data dengan location = 'staging_sticker'
+func (ctl *ProductMasterController) ListStagingSticker(c *gin.Context) {
+	masters, err := ctl.service.GetByLocation("staging_sticker")
+	if err != nil {
+		utils.SendError(c, 500, err.Error())
+		return
+	}
+	utils.SendSuccess(c, masters, "List product master staging_sticker", http.StatusOK)
+}
