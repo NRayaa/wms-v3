@@ -73,6 +73,10 @@ func SetupRoutes(r *gin.Engine) {
 		api.POST("/scanin/manual", controller.InboundManualHandler(config.DB))
 		api.GET("/scanin/manual", controller.ListAllProductMastersHandler(config.DB))
 
+		// Inbound Bulk
+		api.POST("/inbound/bulk-upload", controller.InboundBulkUploadHandler(config.DB))
+		api.POST("/inbound/bulk-process", controller.InboundBulkProcessHandler(config.DB))
+
 		// Product Master Staging Reguler
 		api.GET("/product-masters/staging-reguler", productMasterController.ListStagingReguler)
 		api.GET("/product-masters/staging-sticker", productMasterController.ListStagingSticker)

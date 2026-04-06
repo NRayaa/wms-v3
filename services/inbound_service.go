@@ -3,20 +3,189 @@ package services
 import (
 	"fmt"
 	"math/rand"
+	"strings"
 	"time"
 	"wms/models"
+	"wms/utils"
 
 	"gorm.io/gorm"
 )
 
 type InboundService interface {
 	InboundManual(req models.InboundRequest, db *gorm.DB) (pending models.ProductPending, master models.ProductMaster, err error)
+	// Bulk
+	InboundBulkProcess(req models.BulkInboundRequest, db *gorm.DB) (inserted int, skipped int, skipDetails []string)
 }
 
 type inboundService struct{}
 
 func NewInboundService() InboundService {
 	return &inboundService{}
+}
+
+// Proses bulk upload
+func (s *inboundService) InboundBulkProcess(req models.BulkInboundRequest, db *gorm.DB) (inserted int, skipped int, skipDetails []string) {
+	skipDetails = []string{}
+	// 1. Simpan dokumen ke tabel ProductDocument (tetap satu kali per upload)
+	doc := models.ProductDocument{
+		Code:          fmt.Sprintf("BULK-%d", time.Now().UnixNano()),
+		FileName:      "bulk_upload",
+		Status:        "progress",
+		Type:          "bulk",
+		HeaderBarcode: req.Mapping.BarcodeHeader,
+		HeaderName:    req.Mapping.NameHeader,
+		HeaderItem:    req.Mapping.QtyHeader,
+		HeaderPrice:   req.Mapping.PriceHeader,
+		Supplier:      req.Supplier,
+		TypeProduct:   req.TypeProduct,
+		UserID:        "USER ID", // bisa diambil dari context jika ada auth
+	}
+	if err := db.Create(&doc).Error; err != nil {
+		return 0, 0, []string{fmt.Sprintf("Gagal simpan dokumen: %v", err)}
+	}
+
+	// 2. Mapping header index
+	idxBarcode, idxName, idxQty, idxPrice, idxCategory := -1, -1, -1, -1, -1
+	for i, h := range req.Headers {
+		if h == req.Mapping.BarcodeHeader {
+			idxBarcode = i
+		}
+		if h == req.Mapping.NameHeader {
+			idxName = i
+		}
+		if h == req.Mapping.QtyHeader {
+			idxQty = i
+		}
+		if h == req.Mapping.PriceHeader {
+			idxPrice = i
+		}
+		if strings.ToLower(h) == "category" || strings.ToLower(h) == "kategori" {
+			idxCategory = i
+		}
+	}
+	if idxBarcode == -1 || idxName == -1 || idxQty == -1 || idxPrice == -1 {
+		return 0, 0, []string{fmt.Sprintf("Header mapping tidak valid")}
+	}
+
+	// Ambil semua kategori dari DB untuk pencocokan nama
+	var categories []models.Category
+	if err := db.Find(&categories).Error; err != nil {
+		return 0, 0, []string{fmt.Sprintf("Gagal mengambil kategori: %v", err)}
+	}
+
+	// 3. Proses setiap row: kategorikan otomatis, validasi, insert jika valid
+	for _, row := range req.Rows {
+		if len(row) <= idxPrice || len(row) <= idxQty || len(row) <= idxName || len(row) <= idxBarcode {
+			skipDetails = append(skipDetails, fmt.Sprintf("Row skipped: kolom kurang lengkap: %v", row))
+			skipped++
+			continue
+		}
+		barcode := row[idxBarcode]
+		name := row[idxName]
+		qtyStr := row[idxQty]
+		priceStr := row[idxPrice]
+
+		qty, err1 := utils.ParseInt(qtyStr)
+		price, err2 := utils.ParseFloat(priceStr)
+		if err1 != nil || err2 != nil {
+			skipDetails = append(skipDetails, fmt.Sprintf("Row skipped: qty/price tidak valid: %v", row))
+			skipped++
+			continue
+		}
+
+		// Otomatis tentukan tipe produk per barang berdasarkan kolom kategori
+		var tipeBarang string
+		var categoryID, stickerID, location, typeID string
+		tipeBarang = ""
+		categoryID = ""
+		stickerID = ""
+		location = ""
+		typeID = ""
+
+		// Cek kolom kategori
+		kategoriNama := ""
+		if idxCategory != -1 && len(row) > idxCategory {
+			kategoriNama = strings.TrimSpace(row[idxCategory])
+		}
+
+		// Logic: jika kategori ditemukan di DB, maka reguler, jika tidak, sticker
+		foundCategory := false
+		for _, cat := range categories {
+			if strings.EqualFold(strings.TrimSpace(cat.Name), kategoriNama) {
+				foundCategory = true
+				categoryID = cat.ID.String()
+				break
+			}
+		}
+		if foundCategory {
+			tipeBarang = "reguler"
+			location = "staging_reguler"
+			typeID = "categories"
+		} else {
+			tipeBarang = "sticker"
+			location = "staging_sticker"
+			typeID = "sticker"
+		}
+
+		// Validasi: reguler harus >= 100rb dan ada category, sticker harus < 100rb
+		if tipeBarang == "reguler" {
+			if price < 100000 {
+				skipDetails = append(skipDetails, fmt.Sprintf("Row skipped: harga kurang dari 100rb untuk reguler: %v", row))
+				skipped++
+				continue
+			}
+			if categoryID == "" {
+				skipDetails = append(skipDetails, fmt.Sprintf("Row skipped: kategori tidak ditemukan di DB: '%s' (row: %v)", kategoriNama, row))
+				skipped++
+				continue
+			}
+		} else if tipeBarang == "sticker" {
+			if price >= 100000 {
+				skipDetails = append(skipDetails, fmt.Sprintf("Row skipped: harga >= 100rb untuk sticker: %v", row))
+				skipped++
+				continue
+			}
+		}
+
+		master := models.ProductMaster{
+			DocumentID:       doc.ID.String(),
+			Barcode:          barcode,
+			BarcodeWarehouse: "",
+			Name:             name,
+			NameWarehouse:    "",
+			Item:             qty,
+			ItemWarehouse:    0,
+			Price:            price,
+			PriceWarehouse:   0,
+			CategoryID:       categoryID,
+			StickerID:        stickerID,
+			Location:         location,
+			TypeID:           typeID,
+			TypeOut:          "cargo",
+		}
+		pending := models.ProductPending{
+			DocumentID: doc.ID.String(),
+			Barcode:    barcode,
+			Name:       name,
+			Item:       qty,
+			Price:      price,
+			Status:     "GOOD",
+			IsSKU:      false,
+			Note:       "",
+		}
+		if err := db.Create(&master).Error; err != nil {
+			skipDetails = append(skipDetails, fmt.Sprintf("Row skipped: gagal insert product_master: %v | DB error: %v", row, err))
+			skipped++
+			continue
+		}
+		if err := db.Create(&pending).Error; err != nil {
+			skipDetails = append(skipDetails, fmt.Sprintf("Row skipped: gagal insert product_pending: %v", row))
+			skipped++
+			continue
+		}
+		inserted++
+	}
+	return inserted, skipped, skipDetails
 }
 
 func (s *inboundService) InboundManual(req models.InboundRequest, db *gorm.DB) (models.ProductPending, models.ProductMaster, error) {
@@ -132,10 +301,11 @@ func getOrCreateManualDocument(db *gorm.DB) (models.ProductDocument, error) {
 	err := db.Where("code = ?", "INBOUND_MANUAL").First(&doc).Error
 	if err == gorm.ErrRecordNotFound {
 		doc = models.ProductDocument{
-			Code:     "INBOUND_MANUAL",
-			FileName: "INBOUND_MANUAL",
-			Type:     "manual",
-			Status:   "progress",
+			Code:        "INBOUND_MANUAL",
+			FileName:    "INBOUND_MANUAL",
+			Type:        "manual",
+			Status:      "progress",
+			TypeProduct: "reguler",
 		}
 		if err := db.Create(&doc).Error; err != nil {
 			return doc, err

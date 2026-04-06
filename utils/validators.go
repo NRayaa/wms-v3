@@ -22,6 +22,12 @@ func ParseInt(s string) (int, error) {
 	return v, err
 }
 
+// ParseFloat converts string to float64
+func ParseFloat(s string) (float64, error) {
+	v, err := strconv.ParseFloat(s, 64)
+	return v, err
+}
+
 // GetPaginationParams extracts pagination parameters from query
 func GetPaginationParams(c *gin.Context, defaultLimit int) (int, int) {
 	limit := defaultLimit
