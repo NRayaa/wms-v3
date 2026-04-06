@@ -57,6 +57,10 @@ func ListProductManualHandler(db *gorm.DB) gin.HandlerFunc {
 				s.name AS sticker_name
 			`).
 			Joins(`
+				LEFT JOIN product_documents pd 
+				ON pd.id = pp.document_id
+			`).
+			Joins(`
 				LEFT JOIN product_masters pm 
 				ON pm.product_pending_id = pp.id
 			`).
@@ -68,6 +72,7 @@ func ListProductManualHandler(db *gorm.DB) gin.HandlerFunc {
 				LEFT JOIN stickers s 
 				ON s.id = pm.sticker_id
 			`).
+			Where("pd.type = ?", "manual").
 			Order("pp.created_at DESC").
 			Scan(&results).Error
 

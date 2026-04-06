@@ -233,7 +233,7 @@ func (s *inboundService) InboundManual(req models.InboundRequest, db *gorm.DB) (
 	priceWarehouse := req.Price
 
 	// =========================
-	// HITUNG LOGIC (TANPA MASTER DULU)
+	// HITUNG LOGIC
 	// =========================
 	if req.Price >= 100000 {
 		typeID = "categories"
@@ -247,7 +247,7 @@ func (s *inboundService) InboundManual(req models.InboundRequest, db *gorm.DB) (
 				priceWarehouse = req.Price * (1 - discount/100)
 			}
 		} else {
-			categoryIDPtr = nil
+			categoryID = nil
 		}
 
 		stickerID = nil
@@ -279,7 +279,7 @@ func (s *inboundService) InboundManual(req models.InboundRequest, db *gorm.DB) (
 				stickerID = &id
 				priceWarehouse = float64(*sticker.FixedPrice)
 			} else {
-				stickerIDPtr = nil
+				stickerID = nil
 			}
 		}
 
@@ -304,11 +304,11 @@ func (s *inboundService) InboundManual(req models.InboundRequest, db *gorm.DB) (
 	}
 
 	// =========================
-	// INSERT MASTER (SETELAH ADA pending.ID)
+	// INSERT MASTER
 	// =========================
 	master := models.ProductMaster{
 		DocumentID:       doc.ID.String(),
-		ProductPendingID: strPtr(pending.ID.String()), // ✅ FIX
+		ProductPendingID: strPtr(pending.ID.String()),
 		Barcode:          barcode,
 		BarcodeWarehouse: barcode,
 		Name:             req.Name,
