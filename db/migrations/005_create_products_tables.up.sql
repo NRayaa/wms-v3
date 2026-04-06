@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS product_documents (
     header_name VARCHAR(255),
     header_item VARCHAR(255),
     header_price VARCHAR(255),
-    user_id CHAR(36),
+    user_id UUID,
     supplier VARCHAR(255),
     type_product VARCHAR(50) CHECK (type_product IN ('reguler', 'sticker', 'refurbish')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -24,7 +24,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_product_documents_code ON product_document
 -- ProductPending
 CREATE TABLE IF NOT EXISTS product_pendings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    document_id CHAR(36),
+    document_id UUID REFERENCES product_documents(id),
     barcode VARCHAR(255),
     name TEXT,
     item INT,
@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS product_masters (
     price_warehouse DECIMAL(15,2),
     category_id CHAR(36),
     sticker_id CHAR(36),
+    product_pending_id CHAR(36) REFERENCES product_pendings(id),
     is_sku BOOLEAN DEFAULT false,
     location VARCHAR(50) CHECK (location IN ('staging_reguler', 'staging_sticker', 'display', 'cargo', 'scrap', 'qcd', 'repair', 'staging_sku')),
     bundle VARCHAR(50) CHECK (bundle IN ('yes', 'no')) DEFAULT 'no',
