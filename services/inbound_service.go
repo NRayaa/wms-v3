@@ -76,10 +76,8 @@ func (s *inboundService) InboundBulkProcess(req models.BulkInboundRequest, db *g
 		HeaderItem:    req.Mapping.QtyHeader,
 		HeaderPrice:   req.Mapping.PriceHeader,
 		Supplier:      req.Supplier,
-		TypeProduct:   req.TypeProduct,
-		UserID:        nil,
-		FileItem:      totalFileItem,
-		FilePrice:     int(totalFilePrice), // Casting ke int sesuai modelmu
+		TypeProduct:   &req.TypeProduct,
+		UserID:        nil, // bisa diambil dari context jika ada auth
 	}
 
 	if err := db.Create(&doc).Error; err != nil {
@@ -361,12 +359,13 @@ func getOrCreateManualDocument(db *gorm.DB) (models.ProductDocument, error) {
 	var doc models.ProductDocument
 	err := db.Where("code = ?", "INBOUND_MANUAL").First(&doc).Error
 	if err == gorm.ErrRecordNotFound {
+		tp := "reguler"
 		doc = models.ProductDocument{
 			Code:        "INBOUND_MANUAL",
 			FileName:    "INBOUND_MANUAL",
 			Type:        "manual",
 			Status:      "progress",
-			TypeProduct: "reguler",
+			TypeProduct: &tp,
 		}
 		if err := db.Create(&doc).Error; err != nil {
 			return doc, err
