@@ -31,6 +31,7 @@ func InboundBastUploadHandler(db *gorm.DB) gin.HandlerFunc {
 		inserted, skipped, skipDetails, err := inboundBastService.ProcessBastUpload(
 			supplier,
 			headerBarcode, headerName, headerItem, headerPrice,
+			header.Filename,
 			file, fileType, db,
 		)
 		if err != nil {

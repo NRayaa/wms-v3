@@ -52,6 +52,7 @@ func InboundBulkUploadHandler(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		req := models.BulkInboundRequest{
+			FileName:    header.Filename,
 			Supplier:    supplier,
 			TypeProduct: typeProduct,
 			Type:        fileType,

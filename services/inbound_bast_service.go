@@ -14,6 +14,7 @@ type InboundBastService interface {
 	ProcessBastUpload(
 		supplier string,
 		headerBarcode, headerName, headerItem, headerPrice string,
+		fileName string,
 		file multipart.File,
 		fileType string,
 		db *gorm.DB,
@@ -29,16 +30,20 @@ func NewInboundBastService() InboundBastService {
 func (s *inboundBastService) ProcessBastUpload(
 	supplier string,
 	headerBarcode, headerName, headerItem, headerPrice string,
+	fileName string,
 	file multipart.File,
 	fileType string,
 	db *gorm.DB,
 ) (inserted int, skipped int, skipDetails []string, err error) {
 	skipDetails = []string{}
+	if strings.TrimSpace(fileName) == "" {
+		fileName = "bast_upload"
+	}
 
 	// 1. Create productDocument
 	doc := models.ProductDocument{
 		Code:          fmt.Sprintf("BAST-%d", utils.NowUnixNano()),
-		FileName:      "bast_upload",
+		FileName:      fileName,
 		Status:        "progress",
 		Type:          "bast",
 		HeaderBarcode: headerBarcode,
